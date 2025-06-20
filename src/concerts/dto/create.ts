@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsNumber, IsString } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsPositive, IsString } from 'class-validator';
 
 export class DtoCreateConcert {
   @IsNotEmpty()
@@ -9,6 +9,7 @@ export class DtoCreateConcert {
   @IsString()
   description: string;
 
+  @IsPositive()
   @IsNumber()
   seat: number;
 }

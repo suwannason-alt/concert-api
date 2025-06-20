@@ -45,8 +45,6 @@ export class ConcertsService {
 
   async reserve(concert_uuid: string) {
     try {
-      // const data = await this.concertRepository.createQueryBuilder().getMany();
-      // return data;
       await this.consertUserRepository
         .createQueryBuilder()
         .insert()
