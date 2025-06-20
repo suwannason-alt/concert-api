@@ -11,7 +11,7 @@ import { Response } from 'express';
 import { DtoCreateConcert } from './dto/create';
 import { ConcertsService } from './concerts.service';
 
-@Controller('/concerts')
+@Controller('/concert')
 export class ConcertsController {
   private logger = new Logger(ConcertsController.name);
   constructor(private readonly concertService: ConcertsService) {}
