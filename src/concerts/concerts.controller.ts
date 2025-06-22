@@ -44,10 +44,43 @@ export class ConcertsController {
   @Get('/reserve/:uuid')
   async reserve(@Param('uuid') uuid: string, @Res() res: Response) {
     try {
-      await this.concertService.reserve(uuid);
+      const result = await this.concertService.reserve(uuid);
+      if (result.success === false) {
+        res.status(400);
+        res.json({ success: false, message: result.message });
+        return;
+      }
       res.json({ success: true, message: `Reserve completed.` });
     } catch (error) {
       this.logger.error(error.message, error.stack);
+      res.json({ success: false });
+    }
+  }
+
+  @Get('/cancel/:uuid')
+  async cancel(@Param('uuid') uuid: string, @Res() res: Response) {
+    try {
+      const result = await this.concertService.cancel(uuid);
+      if (result.success === false) {
+        res.status(400);
+        res.json({ success: false, message: result.message });
+        return;
+      }
+      res.json({ success: true, message: `Cancel completed.` });
+    } catch (error) {
+      this.logger.error(error.message, error.stack);
+      res.json({ success: false });
+    }
+  }
+
+  @Get('/history')
+  async history(@Res() res: Response) {
+    try {
+      const data = await this.concertService.history();
+      res.json({ success: true, data });
+    } catch (error) {
+      this.logger.error(error.message, error.stack);
+      res.status(500);
       res.json({ success: false });
     }
   }

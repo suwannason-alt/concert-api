@@ -6,18 +6,23 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { ConcertEntity } from './concert.entity';
-@Entity({ name: 'consert-user' })
+import { UserEntity } from './user.entity';
+@Entity({ name: 'concert-user' })
 export class ConsertUserEntity {
   @PrimaryGeneratedColumn('uuid')
   uuid: string;
 
   @Column()
-  status: string;
-
-  @Column()
   create_at: Date;
 
-  @ManyToOne(() => ConcertEntity, (concert) => concert.consertUsers)
+  @Column()
+  action: string;
+
+  @ManyToOne(() => ConcertEntity, (concert) => concert.concertUsers)
   @JoinColumn({ name: 'concert_uuid' })
   concert_uuid: string;
+
+  @ManyToOne(() => UserEntity, (user) => user.consertUser)
+  @JoinColumn({ name: 'user_uuid' })
+  user_uuid: string;
 }

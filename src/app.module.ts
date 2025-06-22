@@ -5,13 +5,14 @@ import { ConcertsModule } from './concerts/concerts.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConcertEntity } from './entities/concert.entity';
 import { ConsertUserEntity } from './entities/user-concert.entity';
+import { UserEntity } from './entities/user.entity';
 
 @Module({
   imports: [
     TypeOrmModule.forRoot({
       type: 'sqlite',
       database: 'database.sqlite',
-      entities: [ConcertEntity, ConsertUserEntity],
+      entities: [ConcertEntity, ConsertUserEntity, UserEntity],
       synchronize: true,
     }),
     ConcertsModule,

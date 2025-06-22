@@ -1,142 +1,233 @@
+/* eslint-disable @typescript-eslint/require-await */
 import { Test, TestingModule } from '@nestjs/testing';
+import { INestApplication } from '@nestjs/common';
+import * as request from 'supertest';
 import { ConcertsController } from './concerts.controller';
 import { ConcertsService } from './concerts.service';
-import { Response } from 'express';
 
 describe('ConcertsController', () => {
-  let controller: ConcertsController;
-  let serviceMock;
+  let app: INestApplication;
+  let service: Partial<ConcertsService>;
 
-  beforeEach(async () => {
-    serviceMock = {
-      create: jest.fn(),
-      get: jest.fn(),
-      reserve: jest.fn(),
+  beforeAll(async () => {
+    service = {
+      create: jest.fn().mockImplementation(async () => {}),
+      get: jest.fn().mockResolvedValue([{ id: 1, name: 'Concert 1' }]),
+      reserve: jest.fn().mockResolvedValue({ success: true }),
     };
-    const module: TestingModule = await Test.createTestingModule({
+
+    const moduleRef: TestingModule = await Test.createTestingModule({
       controllers: [ConcertsController],
-      providers: [{ provide: ConcertsService, useValue: serviceMock }],
+      providers: [
+        {
+          provide: ConcertsService,
+          useValue: service,
+        },
+      ],
     }).compile();
 
-    controller = module.get<ConcertsController>(ConcertsController);
-    controller = module.get<ConcertsController>(ConcertsController);
+    app = moduleRef.createNestApplication();
+    await app.init();
   });
 
-  describe('Create new record', () => {
-    it('should respond with success message on successful creation', async () => {
-      const mockRes: Partial<Response> = {
-        status: jest.fn().mockReturnThis(),
-        json: jest.fn(),
-      };
+  afterAll(async () => {
+    await app.close();
+  });
 
-      const dto = { name: 'Test', description: 'Desc', seat: 50 };
-
-      await controller.create(dto, mockRes as Response);
-
-      expect(serviceMock.create).toHaveBeenCalledWith(dto);
-      expect(mockRes.status).toHaveBeenCalledWith(201);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        success: true,
-        message: 'Created',
-      });
+  describe('POST /concert/', () => {
+    it('should create a concert successfully', () => {
+      return request(app.getHttpServer())
+        .post('/concert/')
+        .send({ name: 'Test Concert', description: 'desc', seat: 50 })
+        .expect(201)
+        .expect({ success: true, message: 'Created' });
     });
 
-    it('should respond with error when body validation fails', async () => {
-      const mockRes: Partial<Response> = {
-        status: jest.fn().mockReturnThis(),
-        json: jest.fn(),
-      };
-
-      const invalidBody = { name: '', seat: -1 };
-      try {
-        await controller.create(invalidBody as any, mockRes as Response);
-      } catch (error) {
-        expect(error.response.status).toHaveBeenCalledWith(400);
-      }
-    });
-
-    it('should respond with error message if service throws', async () => {
-      const mockRes: Partial<Response> = {
-        status: jest.fn().mockReturnThis(),
-        json: jest.fn(),
-      };
-
-      serviceMock.create = jest.fn().mockImplementation(() => {
-        throw new Error('mocking throw error');
+    it('should handle error in create', () => {
+      (service.create as jest.Mock).mockImplementationOnce(async () => {
+        throw new Error('Crash');
       });
-
-      await controller.create(
-        { name: 'test', description: 'test', seat: 100 } as any,
-        mockRes as Response,
-      );
-
-      expect(mockRes.status).toHaveBeenCalledWith(500);
-      expect(mockRes.json).toHaveBeenCalledWith({ success: false });
+      return request(app.getHttpServer())
+        .post('/concert/')
+        .send({ name: 'Test', description: 'desc', seat: 50 })
+        .expect(500)
+        .then((res) => {
+          expect(res.body).toEqual({ success: false });
+        });
     });
   });
 
-  describe('Retrive data', () => {
-    it('should respond with data when successful', async () => {
-      const mockData = [{ id: 1, name: 'Test Concert' }];
-      const mockRes: Partial<Response> = {
-        status: jest.fn().mockReturnThis(),
-        json: jest.fn(),
-      };
-
-      serviceMock.get.mockResolvedValue(mockData);
-
-      await controller.get(mockRes as Response);
-
-      expect(serviceMock.get).toHaveBeenCalled();
-      expect(mockRes.status).toHaveBeenCalledWith(200);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        success: true,
-        message: 'All concert',
-        data: mockData,
-      });
+  describe('GET /concert/', () => {
+    it('should return all concerts', () => {
+      return request(app.getHttpServer())
+        .get('/concert/')
+        .expect(200)
+        .then((res) => {
+          expect(res.body).toEqual({
+            success: true,
+            message: 'All concert',
+            data: [{ id: 1, name: 'Concert 1' }],
+          });
+        });
     });
 
-    it('should respond with success false if error occurs', async () => {
-      const mockRes: Partial<Response> = {
-        status: jest.fn().mockReturnThis(),
-        json: jest.fn(),
-      };
-
-      serviceMock.get.mockRejectedValue(new Error('mocking throw error'));
-
-      await controller.get(mockRes as Response);
-
-      expect(serviceMock.get).toHaveBeenCalled();
-      expect(mockRes.json).toHaveBeenCalledWith({ success: false });
+    it('should handle error in get', () => {
+      (service.get as jest.Mock).mockImplementationOnce(async () => {
+        throw new Error('Error fetching concerts');
+      });
+      return request(app.getHttpServer())
+        .get('/concert/')
+        .expect(200)
+        .then((res) => {
+          expect(res.body).toEqual({ success: false });
+        });
     });
   });
 
-  describe('Reserve consert', () => {
-    it('should respond with success message on reservation', async () => {
-      const mockRes: Partial<Response> = {
-        json: jest.fn(),
-      };
-
-      await controller.reserve('some-uuid', mockRes as Response);
-
-      expect(serviceMock.reserve).toHaveBeenCalledWith('some-uuid');
-      expect(mockRes.json).toHaveBeenCalledWith({
-        success: true,
-        message: 'Reserve completed.',
-      });
+  describe('GET /concert/reserve/:uuid', () => {
+    it('should reserve a concert successfully', () => {
+      return request(app.getHttpServer())
+        .get('/concert/reserve/some-uuid')
+        .expect(200)
+        .then((res) => {
+          expect(res.body).toEqual({
+            success: true,
+            message: 'Reserve completed.',
+          });
+        });
     });
 
-    it('should respond with success false if error occurs', async () => {
-      const mockRes: Partial<Response> = {
-        json: jest.fn(),
-      };
+    it('should handle reservation failure', () => {
+      (service.reserve as jest.Mock).mockResolvedValue({
+        success: false,
+        message: 'Already reserved',
+      });
+      return request(app.getHttpServer())
+        .get('/concert/reserve/uuid-fail')
+        .expect(400)
+        .then((res) => {
+          expect(res.body).toEqual({
+            success: false,
+            message: 'Already reserved',
+          });
+        });
+    });
 
-      serviceMock.reserve.mockRejectedValue(new Error('mocking throw error'));
+    it('should handle error during reservation', () => {
+      (service.reserve as jest.Mock).mockImplementationOnce(() => {
+        throw new Error('Error');
+      });
+      return request(app.getHttpServer())
+        .get('/concert/reserve/error-uuid')
+        .expect(200)
+        .then((res) => {
+          expect(res.body).toEqual({ success: false });
+        });
+    });
 
-      await controller.reserve('some-uuid', mockRes as Response);
+    describe('GET /concert/history', () => {
+      it('should get hostory completed', async () => {
+        service.history = jest.fn().mockReturnValue({
+          full_name: 'a',
+          create_at: new Date(),
+          concert_name: 'concert_name',
+          action: 'Reserve',
+        });
+        return request(app.getHttpServer())
+          .get(`/concert/history`)
+          .expect(200)
+          .then((res) => {
+            expect(res.body.success).toEqual(true);
+            expect(service.history).toHaveBeenCalledTimes(1);
+          });
+      });
 
-      expect(serviceMock.reserve).toHaveBeenCalledWith('some-uuid');
-      expect(mockRes.json).toHaveBeenCalledWith({ success: false });
+      it('should error onternal server', async () => {
+        service.history = jest.fn().mockImplementation(() => {
+          throw new Error('Test case error');
+        });
+        return request(app.getHttpServer())
+          .get(`/concert/history`)
+          .expect(500)
+          .then((res) => {
+            expect(res.body.success).toEqual(false);
+            expect(service.history).toHaveBeenCalledTimes(1);
+          });
+      });
+    });
+  });
+
+  describe('GET /concert/cancel/:uuid', () => {
+    it('should cancel a concert successfully', () => {
+      service.cancel = jest.fn().mockReturnThis();
+      return request(app.getHttpServer())
+        .get('/concert/cancel/some-uuid')
+        .expect(200)
+        .then((res) => {
+          expect(res.body).toEqual({
+            success: true,
+            message: 'Cancel completed.',
+          });
+        });
+    });
+
+    it('should handle cancelation failure', () => {
+      (service.cancel as jest.Mock).mockResolvedValue({
+        success: false,
+        message: 'Already canceled',
+      });
+      return request(app.getHttpServer())
+        .get('/concert/cancel/uuid-fail')
+        .expect(400)
+        .then((res) => {
+          expect(res.body).toEqual({
+            success: false,
+            message: 'Already canceled',
+          });
+        });
+    });
+
+    it('should handle error during cancelation', () => {
+      (service.cancel as jest.Mock).mockImplementationOnce(() => {
+        throw new Error('Error');
+      });
+      return request(app.getHttpServer())
+        .get('/concert/cancel/error-uuid')
+        .expect(200)
+        .then((res) => {
+          expect(res.body).toEqual({ success: false });
+        });
+    });
+
+    describe('GET /concert/history', () => {
+      it('should get hostory completed', async () => {
+        service.history = jest.fn().mockReturnValue({
+          full_name: 'a',
+          create_at: new Date(),
+          concert_name: 'concert_name',
+          action: 'Reserve',
+        });
+        return request(app.getHttpServer())
+          .get(`/concert/history`)
+          .expect(200)
+          .then((res) => {
+            expect(res.body.success).toEqual(true);
+            expect(service.history).toHaveBeenCalledTimes(1);
+          });
+      });
+
+      it('should error onternal server', async () => {
+        service.history = jest.fn().mockImplementation(() => {
+          throw new Error('Test case error');
+        });
+        return request(app.getHttpServer())
+          .get(`/concert/history`)
+          .expect(500)
+          .then((res) => {
+            expect(res.body.success).toEqual(false);
+            expect(service.history).toHaveBeenCalledTimes(1);
+          });
+      });
     });
   });
 });

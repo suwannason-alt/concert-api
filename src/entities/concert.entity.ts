@@ -15,5 +15,5 @@ export class ConcertEntity {
   seat: number;
 
   @OneToMany(() => ConsertUserEntity, (consertUser) => consertUser.concert_uuid)
-  consertUsers: ConsertUserEntity[];
+  concertUsers: ConsertUserEntity[];
 }
