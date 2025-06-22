@@ -22,6 +22,6 @@ WORKDIR /home/alpine/backend
 COPY --from=build /home/alpine/backend/dist ./dist
 COPY --from=dependencies /home/alpine/backend/node_modules ./node_modules
 
-EXPOSE 8989
+EXPOSE 4000
 
 CMD ["node", "./dist/main.js"]
