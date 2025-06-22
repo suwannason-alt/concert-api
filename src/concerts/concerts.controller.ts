@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Logger,
   Param,
@@ -78,6 +79,18 @@ export class ConcertsController {
     try {
       const data = await this.concertService.history();
       res.json({ success: true, data });
+    } catch (error) {
+      this.logger.error(error.message, error.stack);
+      res.status(500);
+      res.json({ success: false });
+    }
+  }
+
+  @Delete('/:uuid')
+  async deleteConcert(@Param('uuid') uuid: string, @Res() res: Response) {
+    try {
+      await this.concertService.deleteConcert(uuid);
+      res.json({ success: true, message: `Delete completed` });
     } catch (error) {
       this.logger.error(error.message, error.stack);
       res.status(500);

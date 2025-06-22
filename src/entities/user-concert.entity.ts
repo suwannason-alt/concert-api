@@ -18,11 +18,15 @@ export class ConsertUserEntity {
   @Column()
   action: string;
 
-  @ManyToOne(() => ConcertEntity, (concert) => concert.concertUsers)
+  @ManyToOne(() => ConcertEntity, (concert) => concert.concertUsers, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'concert_uuid' })
   concert_uuid: string;
 
-  @ManyToOne(() => UserEntity, (user) => user.consertUser)
+  @ManyToOne(() => UserEntity, (user) => user.consertUser, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'user_uuid' })
   user_uuid: string;
 }

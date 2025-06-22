@@ -14,6 +14,10 @@ export class ConcertEntity {
   @Column()
   seat: number;
 
-  @OneToMany(() => ConsertUserEntity, (consertUser) => consertUser.concert_uuid)
+  @OneToMany(
+    () => ConsertUserEntity,
+    (consertUser) => consertUser.concert_uuid,
+    { onDelete: 'CASCADE' },
+  )
   concertUsers: ConsertUserEntity[];
 }

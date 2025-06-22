@@ -87,14 +87,16 @@ export class ConcertsService {
 
   async cancel(concert_uuid: string) {
     try {
-      const user = await this.userRepositoty.findOne({});
+      const user = await this.userRepositoty.findOne({
+        where: {},
+      });
       if (!user) {
         return { success: false, message: `Not found user.` };
       }
       const alreadyReserve = await this.consertUserRepository
         .createQueryBuilder(`cu`)
         .where(`cu.user_uuid = :uuid`, { uuid: user.uuid })
-        .andWhere(`cu.consert_uuid = :uuid`, { uuid: concert_uuid })
+        .andWhere(`cu.concert_uuid = :uuid`, { uuid: concert_uuid })
         .andWhere(`cu.action = :status`, { status: 'Cancel' })
         .orderBy(`cu.create_at`, 'DESC')
         .getOne();
@@ -132,9 +134,18 @@ export class ConcertsService {
           `u.name AS full_name`,
           `c.name AS concert_name`,
           `cu."action" AS action`,
+          `c.uuid AS concert_uuid`,
         ])
         .getRawMany();
       return data;
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
+
+  async deleteConcert(uuid: string) {
+    try {
+      await this.concertRepository.delete({ uuid });
     } catch (error) {
       throw new Error(error);
     }

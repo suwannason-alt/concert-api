@@ -230,4 +230,28 @@ describe('ConcertsController', () => {
       });
     });
   });
+
+  describe('DELETE /concert/:uuid', () => {
+    it('should delete success', () => {
+      service.deleteConcert = jest.fn().mockReturnThis();
+      return request(app.getHttpServer())
+        .delete(`/concert/same-uuid`)
+        .expect(200)
+        .then((res) => {
+          expect(res.body.success).toEqual(true);
+        });
+    });
+
+    it('should throw error', () => {
+      service.deleteConcert = jest.fn().mockImplementation(() => {
+        throw new Error('Test case error');
+      });
+      return request(app.getHttpServer())
+        .delete(`/concert/same-uuid`)
+        .expect(500)
+        .then((res) => {
+          expect(res.body.success).toEqual(false);
+        });
+    });
+  });
 });

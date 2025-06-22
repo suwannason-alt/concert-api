@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/unbound-method */
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConcertsService } from './concerts.service';
 import { Repository } from 'typeorm';
@@ -203,6 +204,27 @@ describe('ConcertsService', () => {
         await service.history();
       } catch (error) {
         expect(error.message).toContain('Test error');
+      }
+    });
+  });
+
+  describe('delete', () => {
+    it('Should delete complete', async () => {
+      concertRepository.delete = jest.fn().mockReturnThis();
+
+      await service.deleteConcert('same-uuid');
+      expect(concertRepository.delete).toHaveBeenCalledTimes(1);
+    });
+
+    it('Should throw error', async () => {
+      concertRepository.delete = jest.fn().mockImplementation(() => {
+        throw new Error('Test case error');
+      });
+
+      try {
+        await service.deleteConcert('same-uuid');
+      } catch (error) {
+        expect(error.message).toContain('Test case error');
       }
     });
   });

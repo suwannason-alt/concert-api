@@ -10,6 +10,8 @@ export class UserEntity {
   @Column()
   name: string;
 
-  @OneToMany(() => ConsertUserEntity, (consertUser) => consertUser.user_uuid)
+  @OneToMany(() => ConsertUserEntity, (consertUser) => consertUser.user_uuid, {
+    onDelete: 'CASCADE',
+  })
   consertUser: ConsertUserEntity[];
 }
