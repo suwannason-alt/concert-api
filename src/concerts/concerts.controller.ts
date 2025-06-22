@@ -38,6 +38,7 @@ export class ConcertsController {
       res.json({ success: true, message: `All concert`, data });
     } catch (error) {
       this.logger.error(error.message, error.stack);
+      res.status(500);
       res.json({ success: false });
     }
   }
@@ -54,6 +55,7 @@ export class ConcertsController {
       res.json({ success: true, message: `Reserve completed.` });
     } catch (error) {
       this.logger.error(error.message, error.stack);
+      res.status(500);
       res.json({ success: false });
     }
   }
@@ -70,6 +72,7 @@ export class ConcertsController {
       res.json({ success: true, message: `Cancel completed.` });
     } catch (error) {
       this.logger.error(error.message, error.stack);
+      res.status(500);
       res.json({ success: false });
     }
   }

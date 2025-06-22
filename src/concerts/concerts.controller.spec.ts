@@ -77,7 +77,7 @@ describe('ConcertsController', () => {
       });
       return request(app.getHttpServer())
         .get('/concert/')
-        .expect(200)
+        .expect(500)
         .then((res) => {
           expect(res.body).toEqual({ success: false });
         });
@@ -119,7 +119,7 @@ describe('ConcertsController', () => {
       });
       return request(app.getHttpServer())
         .get('/concert/reserve/error-uuid')
-        .expect(200)
+        .expect(500)
         .then((res) => {
           expect(res.body).toEqual({ success: false });
         });
@@ -193,7 +193,7 @@ describe('ConcertsController', () => {
       });
       return request(app.getHttpServer())
         .get('/concert/cancel/error-uuid')
-        .expect(200)
+        .expect(500)
         .then((res) => {
           expect(res.body).toEqual({ success: false });
         });
